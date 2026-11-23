@@ -1,0 +1,1102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Student Planner</title>
+  <style>
+    :root {
+      --bg: #f6f7f5;
+      --surface: #fff;
+      --ink: #20251f;
+      --muted: #747b73;
+      --line: #e7e9e5;
+      --green: #32704e;
+      --performance: #8755c7;
+      --assignment: #27836d;
+      --exam: #d65353;
+      --test: #3cc732;
+      --misc: #d08a27;
+      --shadow: 0 12px 34px rgba(40, 55, 42, .07);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 15px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+
+    .page { max-width: 1140px; margin: auto; padding: 32px 20px 60px; }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 13px; }
+    .brand-icon {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      color: white;
+      background: var(--green);
+      border-radius: 14px;
+      font-size: 21px;
+    }
+
+    h1 { margin: 0; font-size: 22px; letter-spacing: -.04em; }
+    .subtitle { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
+
+    .nav {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      padding: 5px;
+      margin-bottom: 20px;
+      background: #e9ece7;
+      border-radius: 12px;
+    }
+
+    .nav button {
+      flex: 1;
+      min-width: 125px;
+      border: 0;
+      border-radius: 9px;
+      padding: 10px 12px;
+      background: transparent;
+      color: #555c54;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .nav button.active {
+      background: white;
+      color: var(--green);
+      box-shadow: 0 2px 8px rgba(20, 40, 20, .08);
+    }
+
+    .section { display: none; }
+    .section.active { display: block; }
+
+    .panel, .calendar, .side-panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-heading {
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-heading h2 { margin: 0; font-size: 19px; letter-spacing: -.03em; }
+    .panel-heading p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 290px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .calendar-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .month-title { margin: 0; font-size: 19px; letter-spacing: -.03em; }
+    .month-controls { display: flex; gap: 8px; }
+
+    .button, .nav-button {
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--ink);
+      border-radius: 9px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .nav-button { width: 38px; height: 38px; padding: 0; font-size: 18px; }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: #555c54;
+      font-size: 12px;
+    }
+
+    .dot { width: 9px; height: 9px; border-radius: 50%; }
+    .dot.performance { background: var(--performance); }
+    .dot.assignment { background: var(--assignment); }
+    .dot.misc { background: var(--misc); }
+    .dot.exam { background: var(--exam); }
+    .dot.test { background: var(--test); }
+
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+
+    .weekday {
+      padding: 10px 3px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .day {
+      min-height: 105px;
+      padding: 7px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      cursor: pointer;
+    }
+
+    .day:nth-child(7n) { border-right: 0; }
+    .day:hover { background: #f8faf7; }
+    .day.outside { background: #fafbf9; color: #b1b5af; }
+    .day.selected { background: #eff6f0; box-shadow: inset 0 0 0 2px #8eb69a; }
+    .day.today .day-number {
+      display: grid;
+      place-items: center;
+      width: 25px;
+      height: 25px;
+      color: white;
+      background: var(--green);
+      border-radius: 50%;
+    }
+
+    .day-number {
+      display: inline-grid;
+      place-items: center;
+      min-width: 25px;
+      height: 25px;
+      margin-bottom: 4px;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .event {
+      display: block;
+      margin: 3px 0;
+      padding: 3px 5px;
+      border-radius: 5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 10px;
+      font-weight: 650;
+    }
+
+    .event.performance { color: #6634a6; background: #f0e8fa; }
+    .event.assignment { color: #176951; background: #e3f2ec; }
+    .event.misc { color: #92601b; background: #fbf0dc; }
+    .event.exam { color: #a52e2e; background: #fde8e8; }
+    .event.test { color: #3cc732; background: #68ed5f; }
+}
+      
+
+    .more { color: var(--muted); font-size: 10px; padding-left: 5px; }
+
+    .side-panel { padding: 18px; }
+    .side-panel h2 { margin: 0; font-size: 16px; }
+    .selected-date { margin: 4px 0 15px; color: var(--muted); font-size: 12px; }
+    .event-list { display: grid; gap: 9px; }
+
+    .event-card {
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--assignment);
+      border-radius: 10px;
+    }
+
+    .event-card.performance { border-left-color: var(--performance); }
+    .event-card.assignment { border-left-color: var(--assignment); }
+    .event-card.exam { border-left-color: var(--exam); }
+    .event-card.test { border-left-color: var(--test); }
+    .event-card.misc { border-left-color: var(--misc); }
+    .event-card h3 { margin: 0; font-size: 13px; }
+    .event-card p { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+
+    .empty-message { padding: 20px 8px; color: var(--muted); text-align: center; font-size: 12px; }
+
+    .content { padding: 20px 22px 24px; }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1.2fr auto;
+      gap: 9px;
+      margin-bottom: 18px;
+    }
+
+    input, select {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 10px 11px;
+      background: white;
+      color: var(--ink);
+      outline: none;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: #83a88d;
+      box-shadow: 0 0 0 3px #e9f2eb;
+    }
+
+    .primary {
+      border: 0;
+      border-radius: 9px;
+      padding: 10px 15px;
+      color: white;
+      background: var(--green);
+      font-weight: 700;
+    }
+
+    .list { display: grid; gap: 9px; }
+
+    .list-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+    }
+
+    .list-item .details { flex: 1; min-width: 0; }
+    .list-item strong { display: block; font-size: 13px; }
+    .list-item small { color: var(--muted); font-size: 11px; }
+
+    .delete-button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 6px 9px;
+      color: #8c4b43;
+      background: white;
+      font-size: 12px;
+    }
+
+    .task-check { width: 17px; height: 17px; accent-color: var(--green); }
+    .done strong { color: #8b928a; text-decoration: line-through; }
+
+    .schedule-item { display: grid; grid-template-columns: 115px 1fr auto; align-items: center; gap: 14px; }
+    .schedule-time { color: var(--green); font-size: 12px; font-weight: 700; }
+    .schedule-days { color: var(--muted); font-size: 11px; }
+
+    .public-note { margin: 15px 3px 0; color: var(--muted); font-size: 11px; text-align: center; }
+
+    /* Fourth page: Assignment Gradebook */
+    #gradebook {
+      --gb-ink: #20231f;
+      --gb-muted: #777d75;
+      --gb-line: #e8e9e4;
+      --gb-paper: #fff;
+      --gb-green: #316b4d;
+      --gb-green-light: #e8f1e9;
+      --gb-red: #b54a41;
+      --gb-shadow: 0 12px 32px rgba(30, 45, 32, .07);
+    }
+
+    #gradebook .gradebook-shell { max-width: 1120px; margin: 0 auto; padding: 20px 0 35px; }
+    #gradebook .gradebook-header { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 24px; }
+    #gradebook .gradebook-brand { display: flex; align-items: center; gap: 12px; }
+    #gradebook .gradebook-logo {
+      display: grid; place-items: center; width: 42px; height: 42px;
+      border-radius: 13px; background: var(--gb-green); color: white; font-size: 20px;
+    }
+    #gradebook h2, #gradebook h3, #gradebook p { color: inherit; }
+    #gradebook .gradebook-title { margin: 0; font-size: 21px; letter-spacing: -.04em; }
+    #gradebook .gradebook-subtitle { margin: 2px 0 0; color: var(--gb-muted); font-size: 13px; }
+    #gradebook .header-actions { display: flex; gap: 9px; }
+    #gradebook .gb-btn {
+      border: 1px solid var(--gb-line); background: white; color: var(--gb-ink);
+      border-radius: 10px; padding: 9px 13px; font-weight: 600; font-size: 13px;
+    }
+    #gradebook .gb-btn:hover { background: #f4f5f1; }
+    #gradebook .gb-btn.primary { background: var(--gb-green); border-color: var(--gb-green); color: white; }
+    #gradebook .gb-btn.primary:hover { background: #27573e; }
+
+    #gradebook .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+    #gradebook .stat, #gradebook .gb-panel {
+      background: var(--gb-paper); border: 1px solid var(--gb-line);
+      border-radius: 15px; box-shadow: var(--gb-shadow);
+    }
+    #gradebook .stat { padding: 17px 19px; }
+    #gradebook .stat-label { color: var(--gb-muted); font-size: 12px; font-weight: 600; }
+    #gradebook .stat-value { margin-top: 5px; font-size: 25px; font-weight: 700; letter-spacing: -.05em; }
+    #gradebook .stat-foot { color: var(--gb-muted); font-size: 11px; margin-top: 2px; }
+
+    #gradebook .gb-panel { overflow: hidden; }
+    #gradebook .toolbar {
+      padding: 18px 20px; display: flex; justify-content: space-between;
+      align-items: center; gap: 14px; border-bottom: 1px solid var(--gb-line);
+    }
+    #gradebook .toolbar h3 { margin: 0; font-size: 16px; letter-spacing: -.02em; }
+    #gradebook .toolbar small { display: block; color: var(--gb-muted); font-size: 12px; margin-top: 2px; }
+    #gradebook .filters { display: flex; gap: 8px; }
+    #gradebook .filters input, #gradebook .filters select {
+      border: 1px solid var(--gb-line); border-radius: 9px;
+      background: white; padding: 9px 11px; outline: none;
+    }
+    #gradebook .filters input { width: 185px; }
+
+    #gradebook .table-wrap { overflow-x: auto; }
+    #gradebook table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    #gradebook th {
+      text-align: left; color: var(--gb-muted); font-size: 11px;
+      text-transform: uppercase; letter-spacing: .07em; font-weight: 700;
+    }
+    #gradebook th, #gradebook td { padding: 13px 20px; border-bottom: 1px solid #eff0ec; }
+    #gradebook tbody tr:last-child td { border-bottom: 0; }
+    #gradebook td { font-size: 13px; }
+    #gradebook .assignment-name { font-weight: 650; }
+    #gradebook .course { color: var(--gb-muted); font-size: 12px; margin-top: 2px; }
+    #gradebook .pill { display: inline-flex; align-items: center; border-radius: 99px; padding: 4px 9px; font-size: 11px; font-weight: 650; white-space: nowrap; }
+    #gradebook .pill.pending { background: #fff3dc; color: #93651b; }
+    #gradebook .pill.done { background: var(--gb-green-light); color: var(--gb-green); }
+    #gradebook .pill.late { background: #fdebe9; color: var(--gb-red); }
+    #gradebook .grade { font-weight: 650; }
+    #gradebook .actions { display: flex; gap: 6px; }
+    #gradebook .icon-btn { border: 0; background: transparent; color: #777d75; border-radius: 7px; padding: 6px 8px; }
+    #gradebook .icon-btn:hover { background: #f1f2ee; color: var(--gb-ink); }
+    #gradebook .gb-empty { text-align: center; padding: 38px 20px; color: var(--gb-muted); }
+    #gradebook .gb-empty strong { display: block; color: var(--gb-ink); margin-bottom: 5px; }
+    #gradebook .footer-note { color: var(--gb-muted); text-align: center; font-size: 11px; margin-top: 16px; }
+
+    #gradebook dialog {
+      border: 0; border-radius: 16px; padding: 0; width: min(480px, calc(100% - 28px));
+      box-shadow: 0 24px 70px rgba(0,0,0,.22); color: var(--gb-ink);
+    }
+    #gradebook dialog::backdrop { background: rgba(23, 30, 25, .42); }
+    #gradebook .modal-head {
+      padding: 19px 22px; border-bottom: 1px solid var(--gb-line);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    #gradebook .modal-head h3 { margin: 0; font-size: 17px; }
+    #gradebook .modal-body { padding: 20px 22px 22px; }
+    #gradebook .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+    #gradebook .field { display: flex; flex-direction: column; gap: 5px; }
+    #gradebook .field.full { grid-column: 1 / -1; }
+    #gradebook .field label { color: #555b54; font-size: 12px; font-weight: 650; }
+    #gradebook .field input, #gradebook .field select, #gradebook .field textarea {
+      width: 100%; border: 1px solid var(--gb-line); border-radius: 9px;
+      background: white; padding: 9px 11px; outline: none;
+    }
+    #gradebook .field textarea { resize: vertical; min-height: 76px; }
+    #gradebook .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+    @media (max-width: 800px) {
+      .layout { grid-template-columns: 1fr; }
+      .side-panel { order: -1; }
+      .event-list { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    }
+
+    @media (max-width: 700px) {
+      #gradebook .stats { grid-template-columns: repeat(2, 1fr); gap: 9px; }
+      #gradebook .stat { padding: 13px; }
+      #gradebook .stat-value { font-size: 22px; }
+      #gradebook .toolbar { align-items: flex-start; flex-direction: column; }
+      #gradebook .filters { width: 100%; }
+      #gradebook .filters input { width: 100%; min-width: 0; }
+      #gradebook .filters select { max-width: 150px; }
+    }
+
+    @media (max-width: 600px) {
+      .page { padding: 20px 10px 40px; }
+      header { align-items: flex-start; }
+      h1 { font-size: 19px; }
+      .nav button { min-width: 100px; padding: 9px 6px; font-size: 11px; }
+      .day { min-height: 73px; padding: 4px; }
+      .event { padding: 2px 4px; font-size: 9px; }
+      .form-row { grid-template-columns: 1fr 1fr; }
+      .form-row input:first-child { grid-column: 1 / -1; }
+      .schedule-item { grid-template-columns: 85px 1fr auto; gap: 8px; }
+      .content { padding: 16px 13px; }
+      #gradebook .gradebook-header { align-items: flex-start; flex-direction: column; }
+      #gradebook .gradebook-shell { padding-top: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">▦</div>
+        <div>
+          <h1>Richard's Board</h1>
+          <p class="subtitle">Vibecoded Websites are crazy</p>
+        </div>
+      </div>
+    </header>
+
+    <nav class="nav" aria-label="Planner pages">
+      <button class="active" data-page="assignments">Assignment Calendar</button>
+      <button data-page="schedule">Class Schedule</button>
+      <button data-page="todo">To-Do List</button>
+      <button data-page="gradebook">Assignment Gradebook</button>
+    </nav>
+
+    <!-- Page 1: Assignment calendar -->
+    <section class="section active" id="assignments">
+      <div class="layout">
+        <section class="calendar" aria-label="Assignment calendar">
+          <div class="calendar-top">
+            <h2 class="month-title" id="monthTitle"></h2>
+            <div class="month-controls">
+              <button class="nav-button" id="prevMonth" aria-label="Previous month">‹</button>
+              <button class="nav-button" id="nextMonth" aria-label="Next month">›</button>
+            </div>
+          </div>
+          <div class="legend">
+            <span class="legend-item"><i class="dot performance"></i>Performance Task</span>
+            <span class="legend-item"><i class="dot assignment"></i>Assignment</span>
+            <span class="legend-item"><i class="dot misc"></i>Miscellaneous</span>
+	    <span class="legend-item"><i class="dot exam"></i>Exam</span>
+            <span class="legend-item"><i class="dot test"></i>Test</span>
+          </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+        </section>
+
+        <aside class="side-panel">
+          <h2>Due that day</h2>
+          <p class="selected-date" id="selectedDateLabel"></p>
+          <div class="event-list" id="selectedEvents"></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Page 2: Class schedule -->
+    <section class="section" id="schedule">
+      <div class="panel">
+        <div class="panel-heading">
+          <h2>Class Schedule</h2>
+          <p>Add your classes and their meeting days and times.</p>
+        </div>
+        <div class="content">
+          <form class="form-row" id="scheduleForm">
+            <input name="name" placeholder="Class name" required>
+            <input name="time" placeholder="Time (e.g. 9:00 AM)" required>
+            <input name="days" placeholder="Days (e.g. Mon, Wed)" required>
+            <button class="primary" type="submit">Add class</button>
+          </form>
+          <div class="list" id="scheduleList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Page 3: To-do list -->
+    <section class="section" id="todo">
+      <div class="panel">
+        <div class="panel-heading">
+          <h2>To-Do List</h2>
+          <p>Keep track of errands, reminders, and personal tasks.</p>
+        </div>
+        <div class="content">
+          <form class="form-row" id="todoForm">
+            <input name="task" placeholder="What do you need to do?" required>
+            <input name="date" type="date" aria-label="Optional due date">
+            <span></span>
+            <button class="primary" type="submit">Add task</button>
+          </form>
+          <div class="list" id="todoList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Page 4: Assignment gradebook -->
+    <section class="section" id="gradebook">
+      <main class="gradebook-shell">
+        <header class="gradebook-header">
+          <div class="gradebook-brand">
+            <div class="gradebook-logo" aria-hidden="true">✓</div>
+            <div>
+              <h2 class="gradebook-title">Assignment Tracker</h2>
+              <p class="gradebook-subtitle">A little more organized, one task at a time. </p>
+            </div>
+          </div>
+          <div class="header-actions">
+            <button class="gb-btn" id="exportBtn">Export backup</button>
+            <button class="gb-btn primary" id="addBtn">＋ Add assignment</button>
+          </div>
+        </header>
+
+        <section class="stats" aria-label="Overview">
+          <article class="stat">
+            <div class="stat-label">Total assignments</div>
+            <div class="stat-value" id="totalStat">0</div>
+            <div class="stat-foot">All your tracked work</div>
+          </article>
+          <article class="stat">
+            <div class="stat-label">Still to do</div>
+            <div class="stat-value" id="todoStat">0</div>
+            <div class="stat-foot">Not marked complete</div>
+          </article>
+          <article class="stat">
+            <div class="stat-label">Completed</div>
+            <div class="stat-value" id="doneStat">0</div>
+            <div class="stat-foot">Nice work!</div>
+          </article>
+          <article class="stat">
+            <div class="stat-label">Average grade</div>
+            <div class="stat-value" id="avgStat">—</div>
+            <div class="stat-foot">From graded assignments</div>
+          </article>
+        </section>
+
+        <section class="gb-panel">
+          <div class="toolbar">
+            <div>
+              <h3>Your assignments</h3>
+              <small id="listCaption">Keep deadlines and results in one place.</small>
+            </div>
+            <div class="filters">
+              <input id="searchInput" type="search" placeholder="Search assignments…" aria-label="Search assignments">
+              <select id="statusFilter" aria-label="Filter by status">
+                <option value="all">All statuses</option>
+                <option value="todo">To do</option>
+                <option value="done">Completed</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Assignment</th><th>Due date</th><th>Status</th><th>Grade</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="assignmentRows"></tbody>
+            </table>
+            <div id="emptyState" class="gb-empty" hidden>
+              <strong>No assignments found</strong>
+              Add an assignment or try a different search.
+            </div>
+          </div>
+        </section>
+        <p class="footer-note">Your gradebook data stays in this browser. Export a backup if you want a copy.</p>
+      </main>
+
+      <dialog id="assignmentDialog">
+        <form id="assignmentForm">
+          <div class="modal-head">
+            <h3 id="formTitle">Add assignment</h3>
+            <button type="button" class="icon-btn" id="closeBtn" aria-label="Close">✕</button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="assignmentId">
+            <div class="form-grid">
+              <div class="field full">
+                <label for="title">Assignment name *</label>
+                <input id="title" required maxlength="100" placeholder="e.g. Chapter 4 problem set">
+              </div>
+              <div class="field">
+                <label for="course">Class / subject</label>
+                <input id="course" maxlength="60" placeholder="e.g. Biology">
+              </div>
+              <div class="field">
+                <label for="dueDate">Due date</label>
+                <input id="dueDate" type="date">
+              </div>
+              <div class="field">
+                <label for="grade">Grade (optional)</label>
+                <input id="grade" maxlength="20" placeholder="e.g. 92% or A-">
+              </div>
+              <div class="field">
+                <label for="completed">Work status</label>
+                <select id="completed">
+                  <option value="false">To do</option>
+                  <option value="true">Completed</option>
+                </select>
+              </div>
+              <div class="field full">
+                <label for="notes">Notes / completed work</label>
+                <textarea id="notes" maxlength="500" placeholder="What did you finish? Any reminders?"></textarea>
+              </div>
+            </div>
+            <div class="modal-actions">
+              <button type="button" class="gb-btn" id="cancelBtn">Cancel</button>
+              <button type="submit" class="gb-btn primary">Save assignment</button>
+            </div>
+          </div>
+        </form>
+      </dialog>
+    </section>
+
+    <p class="public-note">Planner data is saved in this browser. It is not automatically shared with other people.</p>
+  </main>
+
+  <script>
+    /*
+      Edit the calendar assignments below.
+      type must be "performance", "assignment", or "misc".
+      Use YYYY-MM-DD for dates.
+    */
+   const calendarAssignments = [
+  
+    ];
+
+
+    const typeLabels = {
+      performance: "Performance Task",
+      assignment: "Assignment",
+      misc: "Miscellaneous",
+      exam: "Exam",
+      test: "Test"
+    };
+
+    function escapeHTML(value = "") {
+      return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+      })[char]);
+    }
+
+   function getCalendarEvents() {
+     const gradebookEvents = gradebookAssignments
+       .filter(item => item.dueDate)
+       .map(item => ({
+         title: item.title,
+         date: item.dueDate,
+         course: item.course || "Gradebook",
+         type: "assignment"
+     }));
+
+    const todoEvents = tasks
+      .filter(task => task.date && !task.done)
+      .map(task => ({
+        title: task.title,
+        date: task.date,
+        course: "To-Do",
+        type: "misc"
+    }));
+
+  return [...calendarAssignments, ...gradebookEvents, ...todoEvents];
+}
+
+    // Page navigation
+    document.querySelectorAll(".nav button").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".nav button").forEach(item => item.classList.remove("active"));
+        document.querySelectorAll(".section").forEach(item => item.classList.remove("active"));
+        button.classList.add("active");
+        document.getElementById(button.dataset.page).classList.add("active");
+      });
+    });
+
+    // Assignment calendar
+    const grid = document.getElementById("calendarGrid");
+    const monthTitle = document.getElementById("monthTitle");
+    const selectedDateLabel = document.getElementById("selectedDateLabel");
+    const selectedEvents = document.getElementById("selectedEvents");
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let displayedMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    let selectedDate = dateKey(today);
+
+    function dateKey(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function renderCalendar() {
+      monthTitle.textContent = displayedMonth.toLocaleDateString(undefined, {
+        month: "long", year: "numeric"
+      });
+
+      const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      grid.innerHTML = weekdays.map(day => `<div class="weekday">${day}</div>`).join("");
+
+      const firstDay = new Date(displayedMonth.getFullYear(), displayedMonth.getMonth(), 1);
+      const start = new Date(firstDay);
+      start.setDate(firstDay.getDate() - firstDay.getDay());
+
+      for (let i = 0; i < 42; i++) {
+        const date = new Date(start);
+        date.setDate(start.getDate() + i);
+        const key = dateKey(date);
+        const items = getCalendarEvents().filter(item => item.date === key);
+        const classes = ["day"];
+
+        if (date.getMonth() !== displayedMonth.getMonth()) classes.push("outside");
+        if (key === dateKey(today)) classes.push("today");
+        if (key === selectedDate) classes.push("selected");
+
+        const events = items.slice(0, 3).map(item =>
+          `<span class="event ${escapeHTML(item.type)}" title="${escapeHTML(item.title)}">${escapeHTML(item.title)}</span>`
+        ).join("");
+
+        const more = items.length > 3 ? `<span class="more">+${items.length - 3} more</span>` : "";
+
+        grid.insertAdjacentHTML("beforeend", `
+          <div class="${classes.join(" ")}" data-date="${key}" tabindex="0" role="button">
+            <span class="day-number">${date.getDate()}</span>${events}${more}
+          </div>
+        `);
+      }
+
+      renderSelectedEvents();
+    }
+
+    function renderSelectedEvents() {
+      const date = new Date(selectedDate + "T00:00:00");
+      selectedDateLabel.textContent = date.toLocaleDateString(undefined, {
+        weekday: "long", month: "long", day: "numeric", year: "numeric"
+      });
+
+      const items = getCalendarEvents().filter(item => item.date === selectedDate);
+      if (!items.length) {
+        selectedEvents.innerHTML = '<div class="empty-message">No assignments due this day.</div>';
+        return;
+      }
+
+      selectedEvents.innerHTML = items.map(item => `
+        <article class="event-card ${escapeHTML(item.type)}">
+          <h3>${escapeHTML(item.title)}</h3>
+          <p>${escapeHTML(item.course || "No class listed")} · ${typeLabels[item.type] || "Miscellaneous"}</p>
+        </article>
+      `).join("");
+    }
+
+    grid.addEventListener("click", event => {
+      const day = event.target.closest(".day");
+      if (!day) return;
+      selectedDate = day.dataset.date;
+      renderCalendar();
+    });
+
+    grid.addEventListener("keydown", event => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const day = event.target.closest(".day");
+      if (!day) return;
+      event.preventDefault();
+      selectedDate = day.dataset.date;
+      renderCalendar();
+    });
+
+    document.getElementById("prevMonth").addEventListener("click", () => {
+      displayedMonth.setMonth(displayedMonth.getMonth() - 1);
+      renderCalendar();
+    });
+
+    document.getElementById("nextMonth").addEventListener("click", () => {
+      displayedMonth.setMonth(displayedMonth.getMonth() + 1);
+      renderCalendar();
+    });
+
+    // Local storage helpers
+    function loadData(key) {
+      try {
+        return JSON.parse(localStorage.getItem(key)) || [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveData(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    // Class schedule
+    let schedule = loadData("studentPlannerSchedule");
+    const scheduleList = document.getElementById("scheduleList");
+
+    function renderSchedule() {
+      if (!schedule.length) {
+        scheduleList.innerHTML = '<div class="empty-message">No classes added yet.</div>';
+        return;
+      }
+
+      scheduleList.innerHTML = schedule.map((item, index) => `
+        <div class="list-item schedule-item">
+          <span class="schedule-time">${escapeHTML(item.time)}</span>
+          <div class="details">
+            <strong>${escapeHTML(item.name)}</strong>
+            <small class="schedule-days">${escapeHTML(item.days)}</small>
+          </div>
+          <button class="delete-button" data-delete-class="${index}">Delete</button>
+        </div>
+      `).join("");
+    }
+
+    document.getElementById("scheduleForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      schedule.push({
+        name: form.get("name").trim(),
+        time: form.get("time").trim(),
+        days: form.get("days").trim()
+      });
+      saveData("studentPlannerSchedule", schedule);
+      event.currentTarget.reset();
+      renderSchedule();
+    });
+
+    scheduleList.addEventListener("click", event => {
+      const button = event.target.closest("[data-delete-class]");
+      if (!button) return;
+      schedule.splice(Number(button.dataset.deleteClass), 1);
+      saveData("studentPlannerSchedule", schedule);
+      renderSchedule();
+    });
+
+    // To-do list
+    let tasks = loadData("studentPlannerTasks");
+    const todoList = document.getElementById("todoList");
+
+    function renderTasks() {
+      if (!tasks.length) {
+        todoList.innerHTML = '<div class="empty-message">Your to-do list is empty.</div>';
+        return;
+      }
+
+      todoList.innerHTML = tasks.map((task, index) => `
+        <div class="list-item ${task.done ? "done" : ""}">
+          <input class="task-check" type="checkbox" aria-label="Mark task complete"
+            data-toggle-task="${index}" ${task.done ? "checked" : ""}>
+          <div class="details">
+            <strong>${escapeHTML(task.title)}</strong>
+            <small>${task.date ? `Due ${escapeHTML(task.date)}` : "No due date"}</small>
+          </div>
+          <button class="delete-button" data-delete-task="${index}">Delete</button>
+        </div>
+      `).join("");
+    }
+
+    document.getElementById("todoForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      tasks.push({
+        title: form.get("task").trim(),
+        date: form.get("date"),
+        done: false
+      });
+      saveData("studentPlannerTasks", tasks);
+      event.currentTarget.reset();
+      renderTasks();
+      renderCalendar();
+    });
+
+    todoList.addEventListener("click", event => {
+      const deleteButton = event.target.closest("[data-delete-task]");
+      if (deleteButton) {
+        tasks.splice(Number(deleteButton.dataset.deleteTask), 1);
+        saveData("studentPlannerTasks", tasks);
+        renderTasks();
+        return;
+      }
+
+      const checkbox = event.target.closest("[data-toggle-task]");
+      if (checkbox) {
+        tasks[Number(checkbox.dataset.toggleTask)].done = checkbox.checked;
+        saveData("studentPlannerTasks", tasks);
+        renderTasks();
+      }
+    });
+
+    // Page 4: Assignment gradebook
+    const GRADEBOOK_STORAGE_KEY = "personal-assignment-tracker-v1";
+    const gradebookDialog = document.getElementById("assignmentDialog");
+
+    function loadGradebookAssignments() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(GRADEBOOK_STORAGE_KEY) || "[]");
+        return Array.isArray(saved) ? saved : [];
+      } catch {
+        return [];
+      }
+    }
+
+    let gradebookAssignments = loadGradebookAssignments();
+
+    function saveGradebook() {
+      localStorage.setItem(GRADEBOOK_STORAGE_KEY, JSON.stringify(gradebookAssignments));
+          renderGradebook();
+          renderCalendar();
+    }
+
+    function formatGradebookDate(date) {
+      if (!date) return "—";
+      const parsed = new Date(date + "T00:00:00");
+      return parsed.toLocaleDateString(undefined, {
+        month: "short", day: "numeric", year: "numeric"
+      });
+    }
+
+    function isGradebookOverdue(item) {
+      if (item.completed || !item.dueDate) return false;
+      return item.dueDate < new Date().toISOString().slice(0, 10);
+    }
+
+    function renderGradebook() {
+      const done = gradebookAssignments.filter(item => item.completed).length;
+      const numericGrades = gradebookAssignments
+        .map(item => {
+          const match = String(item.grade || "").match(/-?\d+(?:\.\d+)?/);
+          return match ? Number(match[0]) : null;
+        })
+        .filter(Number.isFinite);
+
+      document.getElementById("totalStat").textContent = gradebookAssignments.length;
+      document.getElementById("todoStat").textContent = gradebookAssignments.length - done;
+      document.getElementById("doneStat").textContent = done;
+      document.getElementById("avgStat").textContent = numericGrades.length
+        ? (numericGrades.reduce((sum, grade) => sum + grade, 0) / numericGrades.length).toFixed(1) + "%"
+        : "—";
+
+      const query = document.getElementById("searchInput").value.trim().toLowerCase();
+      const filter = document.getElementById("statusFilter").value;
+
+      const visible = gradebookAssignments
+        .filter(item =>
+          `${item.title} ${item.course} ${item.notes} ${item.grade}`.toLowerCase().includes(query)
+        )
+        .filter(item =>
+          filter === "all" || (filter === "done" ? item.completed : !item.completed)
+        )
+        .sort((a, b) => {
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+          return a.dueDate.localeCompare(b.dueDate);
+        });
+
+      document.getElementById("assignmentRows").innerHTML = visible.map(item => {
+        let status;
+        if (item.completed) status = '<span class="pill done">Completed</span>';
+        else if (isGradebookOverdue(item)) status = '<span class="pill late">Overdue</span>';
+        else status = '<span class="pill pending">To do</span>';
+
+        return `
+          <tr>
+            <td>
+              <div class="assignment-name">${escapeHTML(item.title)}</div>
+              <div class="course">${escapeHTML(item.course || "No class")}</div>
+            </td>
+            <td>${formatGradebookDate(item.dueDate)}</td>
+            <td>${status}</td>
+            <td class="grade">${escapeHTML(item.grade || "—")}</td>
+            <td>
+              <div class="actions">
+                <button class="icon-btn" data-action="toggle" data-id="${escapeHTML(item.id)}"
+                  title="${item.completed ? "Mark to do" : "Mark complete"}">${item.completed ? "↶" : "✓"}</button>
+                <button class="icon-btn" data-action="edit" data-id="${escapeHTML(item.id)}" title="Edit">✎</button>
+                <button class="icon-btn" data-action="delete" data-id="${escapeHTML(item.id)}" title="Delete">⌫</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      document.getElementById("emptyState").hidden = visible.length > 0;
+      document.getElementById("listCaption").textContent =
+        `${gradebookAssignments.length} assignment${gradebookAssignments.length === 1 ? "" : "s"} tracked`;
+    }
+
+    function openGradebookForm(item = null) {
+      document.getElementById("assignmentForm").reset();
+      document.getElementById("assignmentId").value = item?.id || "";
+      document.getElementById("formTitle").textContent = item ? "Edit assignment" : "Add assignment";
+      document.getElementById("title").value = item?.title || "";
+      document.getElementById("course").value = item?.course || "";
+      document.getElementById("dueDate").value = item?.dueDate || "";
+      document.getElementById("grade").value = item?.grade || "";
+      document.getElementById("completed").value = String(Boolean(item?.completed));
+      document.getElementById("notes").value = item?.notes || "";
+      gradebookDialog.showModal();
+      document.getElementById("title").focus();
+    }
+
+    document.getElementById("addBtn").addEventListener("click", () => openGradebookForm());
+    document.getElementById("closeBtn").addEventListener("click", () => gradebookDialog.close());
+    document.getElementById("cancelBtn").addEventListener("click", () => gradebookDialog.close());
+    document.getElementById("searchInput").addEventListener("input", renderGradebook);
+    document.getElementById("statusFilter").addEventListener("change", renderGradebook);
+
+    document.getElementById("assignmentForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const id = document.getElementById("assignmentId").value;
+      const item = {
+        id: id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
+        title: document.getElementById("title").value.trim(),
+        course: document.getElementById("course").value.trim(),
+        dueDate: document.getElementById("dueDate").value,
+        grade: document.getElementById("grade").value.trim(),
+        completed: document.getElementById("completed").value === "true",
+        notes: document.getElementById("notes").value.trim()
+      };
+
+      if (id) {
+        gradebookAssignments = gradebookAssignments.map(existing => existing.id === id ? item : existing);
+      } else {
+        gradebookAssignments.push(item);
+      }
+
+      saveGradebook();
+      gradebookDialog.close();
+    });
+
+    document.getElementById("assignmentRows").addEventListener("click", event => {
+      const button = event.target.closest("button[data-action]");
+      if (!button) return;
+
+      const item = gradebookAssignments.find(entry => entry.id === button.dataset.id);
+      if (!item) return;
+
+      if (button.dataset.action === "edit") openGradebookForm(item);
+
+      if (button.dataset.action === "toggle") {
+        item.completed = !item.completed;
+        saveGradebook();
+      }
+
+      if (button.dataset.action === "delete" && confirm(`Delete "${item.title}"?`)) {
+        gradebookAssignments = gradebookAssignments.filter(entry => entry.id !== item.id);
+        saveGradebook();
+      }
+    });
+
+    document.getElementById("exportBtn").addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(gradebookAssignments, null, 2)], {
+        type: "application/json"
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "assignments-backup.json";
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+
+    renderCalendar();
+    renderSchedule();
+    renderTasks();
+    renderGradebook();
+  </script>
+</body>
+</html>
